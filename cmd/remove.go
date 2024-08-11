@@ -1,11 +1,14 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
-	"fmt"
+	"encoding/csv"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +24,61 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("remove called")
+		file, err := os.OpenFile("./data.csv", os.O_APPEND|os.O_RDWR, 0644)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer file.Close()
+
+		writer := csv.NewWriter(file)
+		reader := csv.NewReader(file)
+
+		defer writer.Flush()
+
+		indexForRemoval, err := strconv.Atoi(strings.Join(args, ""))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		lines, err := reader.ReadAll()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		var filteredLines [][]string
+
+		for i := 0; i < len(lines); i++ {
+			if i == 0 {
+				filteredLines = append(filteredLines, lines[i])
+				continue
+			}
+			index, err := strconv.Atoi(lines[i][0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			if index != indexForRemoval {
+				filteredLines = append(filteredLines, lines[i])
+			}
+		}
+
+		file, err = os.Create("./data.csv")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer file.Close()
+
+		writer = csv.NewWriter(file)
+
+		err = writer.WriteAll(filteredLines)
+
+		if err != nil {
+			log.Fatal(err)
+		}
 	},
 }
 

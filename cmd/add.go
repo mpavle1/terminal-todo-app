@@ -1,11 +1,15 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
-	"fmt"
+	"encoding/csv"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +25,49 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("add called")
+		file, err := os.OpenFile("./data.csv", os.O_APPEND|os.O_RDWR, 0644)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer file.Close()
+
+		writer := csv.NewWriter(file)
+		reader := csv.NewReader(file)
+		stdOutWriter := csv.NewWriter(os.Stdout)
+
+		defer writer.Flush()
+		defer stdOutWriter.Flush()
+
+		lines, err := reader.ReadAll()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		lastIndex := 0
+
+		if len(lines) > 1 {
+			lastIndex, err = strconv.Atoi(lines[len(lines)-1][0])
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		index := lastIndex + 1
+
+		now := time.Now()
+
+		now.Format(time.UnixDate)
+
+		writer.Write([]string{
+			strconv.Itoa(index), strings.Join(args, " "), now.String(), "false",
+		})
+
+		stdOutWriter.Write([]string{
+			strconv.Itoa(index), strings.Join(args, " "), now.String(), "false",
+		})
 	},
 }
 

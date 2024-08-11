@@ -1,12 +1,17 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"encoding/csv"
 	"fmt"
+	"log"
+	"os"
+	"text/tabwriter"
+	"time"
 
+	"github.com/mergestat/timediff"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +26,45 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("list called")
+		f, err := os.Open("./data.csv")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		defer f.Close()
+
+		csvReader := csv.NewReader(f)
+
+		data, err := csvReader.ReadAll()
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		writer := tabwriter.NewWriter(os.Stdout, 10, 0, 2, ' ', 0)
+
+		defer writer.Flush()
+
+		for i := range data {
+			if i == 0 {
+				fmt.Fprintln(writer, data[i])
+				continue
+			}
+			var output []string
+			for j := range data[i] {
+				if j == 2 {
+					todoCreatedTime, err := time.Parse(time.UnixDate, data[i][j])
+					if err != nil {
+						log.Fatal(err)
+					}
+					output = append(output, timediff.TimeDiff(todoCreatedTime))
+					continue
+				}
+				output = append(output, data[i][j])
+			}
+			fmt.Fprintln(writer, output)
+		}
 	},
 }
 
